@@ -10,7 +10,8 @@ import sys
 
 
 HERE = Path(__file__).resolve().parent
-HANDLE = re.compile(r"^### ([a-z0-9][a-z0-9-]*)$", re.MULTILINE)
+HANDLE = re.compile(r"[a-z0-9][a-z0-9-]*")
+HEADING = re.compile(r"###[ \t]+([a-z0-9][a-z0-9-]*)[ \t]*")
 PROVENANCE = {"active-rule", "active-skill", "cold-incident"}
 
 
@@ -37,10 +38,20 @@ def check(manifest_path, corpus_path):
         handles = []
         for protection in protections:
             handle = protection.get("handle") if isinstance(protection, dict) else None
-            if not isinstance(handle, str) or not HANDLE.fullmatch("### " + handle):
+            if not isinstance(handle, str) or not HANDLE.fullmatch(handle):
                 raise ValueError("manifest protection has an invalid handle")
             handles.append(handle)
-        corpus_handles = HANDLE.findall(corpus_path.read_text(encoding="utf-8"))
+        corpus_handles = []
+        for number, line in enumerate(corpus_path.read_text(encoding="utf-8-sig").splitlines(), 1):
+            if line.startswith("    "):
+                continue
+            line = line.lstrip(" ")
+            if not line.startswith("###") or line.startswith("####"):
+                continue
+            heading = HEADING.fullmatch(line)
+            if not heading:
+                raise ValueError(f"invalid corpus handle heading at line {number}")
+            corpus_handles.append(heading[1])
         if not corpus_handles:
             raise ValueError("corpus has no protection handles")
     except (OSError, UnicodeError, ValueError) as error:

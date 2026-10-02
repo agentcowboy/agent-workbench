@@ -45,7 +45,6 @@ commit_case() {
         printf 'SHARED_INDEX FAIL case=%s commit failed\n' "$case_name" >&2
         exit 1
     fi
-    assert true
 }
 
 warning_is() {

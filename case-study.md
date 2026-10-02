@@ -1,6 +1,6 @@
 # Smaller instructions, narrower claims
 
-A solo operator running AI coding agents trimmed an instruction set and used a protection inventory to watch for missing guidance. This account reports archived measurements of anonymised surfaces, not fresh measurements of today's instructions. The runnable [coverage demo](coverage/protection-corpus.md) uses three synthetic protections; the [acceptance run](ACCEPTANCE) tests tool mechanics.
+A solo operator running AI coding agents trimmed an instruction set and used a protection inventory to watch for missing guidance. This account reports archived measurements of anonymised surfaces, not fresh measurements of today's instructions. The runnable [coverage demo](coverage/protection-coverage-check.py) uses three synthetic protections; the [acceptance run](ACCEPTANCE) tests tool mechanics.
 
 ## Archived byte measurements
 
@@ -17,7 +17,7 @@ There were 43 protections at the trim and 42 in the current private inventory. A
 
 ## Current rule excerpts
 
-These are real excerpts from the operator's rule set, in its current wording. They are not historical before/after examples. The completion excerpt ends at a sentence boundary; `…` marks omitted text.
+These are real excerpts from the operator's rule set, in its wording as of 2026-10-02. They are not historical before/after examples. The completion excerpt ends at a sentence boundary; `…` marks omitted text.
 
 **Tested rollback — excerpt from the operator's rule set:**
 

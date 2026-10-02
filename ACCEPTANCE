@@ -74,6 +74,18 @@ corpus.write_text(original_corpus.replace("### demo-confirm-delete", "### demo-u
 result = run()
 require(result.returncode == 1 and "corpus-only handles: demo-unlisted" in result.stderr
         and "manifest-only handles: demo-confirm-delete" in result.stderr, result)
+corpus.write_text(original_corpus + "\n### demo-confirm-delete \n", encoding="utf-8")
+result = run()
+require(result.returncode == 1 and "duplicate corpus handles: demo-confirm-delete" in result.stderr, result)
+corpus.write_text(original_corpus + "\n### demo-unlisted \n", encoding="utf-8")
+result = run()
+require(result.returncode == 1 and "corpus-only handles: demo-unlisted" in result.stderr, result)
+corpus.write_text(original_corpus + "\n### Bad Handle\n", encoding="utf-8")
+result = run()
+require(result.returncode == 2 and "INPUT ERROR:" in result.stderr, result)
+corpus.write_text(original_corpus + "\n  ### demo-confirm-delete\n", encoding="utf-8")
+result = run()
+require(result.returncode == 1 and "duplicate corpus handles: demo-confirm-delete" in result.stderr, result)
 corpus.write_text(original_corpus, encoding="utf-8")
 alternate = copy.deepcopy(protections)
 alternate[0]["anchors"].insert(0, {"file": "absent.md", "pattern": pattern, "provenance": "active-rule"})
@@ -91,4 +103,4 @@ require(result.returncode == 2 and "nonempty JSON array" in result.stderr, resul
 PY
 
 bash "$HERE/shared-index/test-shared-index-warn.sh"
-printf 'R1 ACCEPTANCE PASS\n'
+printf 'ACCEPTANCE PASS\n'

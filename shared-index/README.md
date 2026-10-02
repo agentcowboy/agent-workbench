@@ -4,7 +4,11 @@
 
 The helper uses NUL-delimited paths and disables rename detection, so a rename is inspected as its removed and added paths. It always exits zero, including when inspection fails. It detects directory ownership only: no identity, lock, authorship or concurrency tracking. A mixed-owner merge can produce an accepted advisory warning.
 
+The hook compares the index with `HEAD`, so `git commit --amend` that adds only the other writer's change to a single-writer commit does not warn.
+
 ## Install and remove
+
+`writer-a` and `writer-b` are placeholder directory names. Change the two `case` labels and the names in the warning message in `shared-index-warn.sh` to the two directory names you care about; otherwise the hook never warns about your directories. The bundled tests use the placeholder names, so run them on an unedited copy.
 
 Copy the helper into your repository, then add this call to your existing Bash `pre-commit` hook, adjusting the relative path:
 
@@ -24,4 +28,4 @@ Inspect the candidate diff and coordinate before committing. A plain commit uses
 
 Run `bash shared-index/test-shared-index-warn.sh` or `bash ACCEPTANCE`. Fresh synthetic repositories exercise initial, mixed, single, `-a`, amend, nearest-owner, neutral, unusual-filename, inspection-failure and pathspec cases. The pathspec case deliberately uses different staged and working-tree text, reads back the commit, and checks the preserved staged change. Every assertion must run; there are no skips.
 
-Scratch directories use `mktemp -d` under `${TMPDIR:-/tmp}` and are cleaned on exit. That location must permit executable Git hooks. The test hook calls the exported helper directly; it needs no scanner or external installation.
+Scratch directories use `mktemp -d` under `${TMPDIR:-/tmp}` and are cleaned on exit. That location must permit executable Git hooks. The test hook calls the exported helper directly; it needs no external installation.
