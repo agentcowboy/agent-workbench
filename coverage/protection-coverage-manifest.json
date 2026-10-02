@@ -1,0 +1,14 @@
+[
+  {
+    "handle": "demo-confirm-delete",
+    "anchors": [{"file": "example-boot.md", "pattern": "Ask before deleting a saved draft.", "provenance": "active-rule"}]
+  },
+  {
+    "handle": "demo-run-example",
+    "anchors": [{"file": "example-boot.md", "pattern": "Run the example before reporting it works.", "provenance": "active-skill"}]
+  },
+  {
+    "handle": "demo-check-destination",
+    "anchors": [{"file": "example-boot.md", "pattern": "Check the destination before copying a draft.", "provenance": "cold-incident"}]
+  }
+]

@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+HERE="$(cd -- "$(dirname -- "$0")" && pwd)"
+scratch="$(mktemp -d "${TMPDIR:-/tmp}/agent-workbench.XXXXXX")"
+trap 'rm -rf -- "$scratch"' EXIT
+
+python3 - "$HERE" "$scratch" <<'PY'
+import copy
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+source, scratch = map(Path, sys.argv[1:])
+fixture = scratch / "coverage"
+shutil.copytree(source / "coverage", fixture)
+manifest = fixture / "protection-coverage-manifest.json"
+corpus = fixture / "protection-corpus.md"
+checker = fixture / "protection-coverage-check.py"
+boot = fixture / "example-boot.md"
+original_manifest = manifest.read_text(encoding="utf-8")
+protections = json.loads(original_manifest)
+original_boot = boot.read_text(encoding="utf-8")
+original_corpus = corpus.read_text(encoding="utf-8")
+
+def run():
+    return subprocess.run(
+        [sys.executable, str(checker), "--manifest", str(manifest), "--corpus", str(corpus)],
+        cwd=scratch, capture_output=True, text=True, check=False,
+    )
+
+def require(condition, result):
+    if not condition:
+        sys.stderr.write(result.stdout + result.stderr)
+        raise SystemExit("COVERAGE acceptance failed")
+
+result = run()
+require(result.returncode == 0 and result.stdout.splitlines() == [
+    "PASS demo-confirm-delete", "PASS demo-run-example", "PASS demo-check-destination",
+    "3/3 protections have >=1 present text anchor",
+] and not result.stderr, result)
+print("COVERAGE baseline=3/3")
+
+target = protections[0]
+pattern = target["anchors"][0]["pattern"]
+require(original_boot.count(pattern) == 1, result)
+# Change only anchor text: the passing manifest and valid provenance are untouched.
+boot.write_text(original_boot.replace(pattern, "", 1), encoding="utf-8")
+result = run()
+require(result.returncode == 1 and result.stdout.splitlines() == [
+    "ORPHAN demo-confirm-delete", "PASS demo-run-example", "PASS demo-check-destination",
+    "2/3 protections have >=1 present text anchor",
+] and result.stderr == "Orphaned: demo-confirm-delete\n", result)
+print("COVERAGE anchor-removal=2/3 named-orphan=yes")
+
+boot.write_text(original_boot, encoding="utf-8")
+result = run()
+require(result.returncode == 0 and "3/3 protections have >=1 present text anchor\n" in result.stdout, result)
+print("COVERAGE restore=3/3")
+
+manifest.write_text(json.dumps(protections + [copy.deepcopy(target)]), encoding="utf-8")
+result = run()
+require(result.returncode == 1 and result.stderr ==
+        "BIJECTION ERROR: duplicate manifest handles: demo-confirm-delete\n", result)
+print("COVERAGE duplicate-handle=caught")
+
+# Quiet checks for the other preserved contracts; all mutations stay in scratch.
+manifest.write_text(original_manifest, encoding="utf-8")
+corpus.write_text(original_corpus + "\n### demo-confirm-delete\n", encoding="utf-8")
+result = run()
+require(result.returncode == 1 and "duplicate corpus handles: demo-confirm-delete" in result.stderr, result)
+corpus.write_text(original_corpus.replace("### demo-confirm-delete", "### demo-unlisted"), encoding="utf-8")
+result = run()
+require(result.returncode == 1 and "corpus-only handles: demo-unlisted" in result.stderr
+        and "manifest-only handles: demo-confirm-delete" in result.stderr, result)
+corpus.write_text(original_corpus, encoding="utf-8")
+alternate = copy.deepcopy(protections)
+alternate[0]["anchors"].insert(0, {"file": "absent.md", "pattern": pattern, "provenance": "active-rule"})
+manifest.write_text(json.dumps(alternate), encoding="utf-8")
+result = run()
+require(result.returncode == 0, result)
+invalid = copy.deepcopy(protections)
+invalid[0]["anchors"][0]["provenance"] = "unlabelled"
+manifest.write_text(json.dumps(invalid), encoding="utf-8")
+result = run()
+require(result.returncode == 1 and "ORPHAN demo-confirm-delete\n" in result.stdout, result)
+manifest.write_text("[]", encoding="utf-8")
+result = run()
+require(result.returncode == 2 and "nonempty JSON array" in result.stderr, result)
+PY
+
+bash "$HERE/shared-index/test-shared-index-warn.sh"
+printf 'R1 ACCEPTANCE PASS\n'
