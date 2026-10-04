@@ -38,6 +38,8 @@ This is a small, best-effort release. Re-run `bash ACCEPTANCE` after changing ei
 
 v0.1.1: a `###` heading that isn't a valid handle is now an input error (exit 2) instead of being ignored, and headings with trailing or up to three leading spaces are recognised.
 
+v0.1.2: shared-index tests isolate caller Git environment, warnings ignore diff config, and malformed manifest entries are input errors (exit 2).
+
 Built with AI coding agents; tested as described in ACCEPTANCE.
 
 MIT licensed; see [LICENSE](LICENSE).

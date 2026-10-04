@@ -12,7 +12,9 @@ git rev-parse --show-toplevel >/dev/null 2>&1 \
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/shared-index.XXXXXX")" \
     || warn_and_continue 'unable to create scratch directory; inspection skipped.'
 trap 'rm -rf -- "$scratch" || :' EXIT
-if ! git diff --cached -z --no-renames --name-only --no-ext-diff >"$scratch/paths" 2>/dev/null; then
+tree=HEAD
+git rev-parse --verify HEAD >/dev/null 2>&1 || tree=$(git hash-object -t tree /dev/null)
+if ! git diff-index --cached -z --no-renames --name-only --no-ext-diff "$tree" >"$scratch/paths" 2>/dev/null; then
     warn_and_continue 'unable to inspect staged paths; inspection skipped.'
 fi
 

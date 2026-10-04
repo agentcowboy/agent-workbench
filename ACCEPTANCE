@@ -96,11 +96,22 @@ invalid = copy.deepcopy(protections)
 invalid[0]["anchors"][0]["provenance"] = "unlabelled"
 manifest.write_text(json.dumps(invalid), encoding="utf-8")
 result = run()
-require(result.returncode == 1 and "ORPHAN demo-confirm-delete\n" in result.stdout, result)
+require(result.returncode == 2 and result.stderr ==
+        "INPUT ERROR: demo-confirm-delete anchor 1: invalid provenance\n", result)
 manifest.write_text("[]", encoding="utf-8")
 result = run()
 require(result.returncode == 2 and "nonempty JSON array" in result.stderr, result)
 PY
 
-bash "$HERE/shared-index/test-shared-index-warn.sh"
+(
+    unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE
+    git init --quiet "$scratch/sentinel"
+    printf 'sentinel\n' >"$scratch/sentinel/sentinel"
+    git -C "$scratch/sentinel" add sentinel
+    cp "$scratch/sentinel/.git/index" "$scratch/index-before"
+    GIT_INDEX_FILE="$scratch/sentinel/.git/index" GIT_DIR="$scratch/sentinel/.git" \
+        GIT_WORK_TREE="$scratch/sentinel" \
+        bash "$HERE/shared-index/test-shared-index-warn.sh"
+    cmp "$scratch/index-before" "$scratch/sentinel/.git/index"
+)
 printf 'ACCEPTANCE PASS\n'

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE
 HERE="$(cd -- "$(dirname -- "$0")" && pwd)"
 export AW_HELPER="$HERE/shared-index-warn.sh"
 export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null
@@ -75,6 +76,16 @@ commit_case -qm mixed
 warning_is yes
 assert test "$(git -C "$repo" show HEAD:writer-a/a)" = changed-a
 assert test "$(git -C "$repo" show HEAD:writer-b/b)" = changed-b
+
+new_repo diff-config
+seed
+git -C "$repo" config diff.relative true
+git -C "$repo" config diff.ignoreSubmodules all
+printf 'configured-a\n' >"$repo/writer-a/a"
+printf 'configured-b\n' >"$repo/writer-b/b"
+git -C "$repo" add .
+assert bash -c 'cd -- "$1/writer-a" && bash "$AW_HELPER"' bash "$repo" >"$scratch/commit-output" 2>&1
+warning_is yes
 
 new_repo single
 seed
@@ -157,7 +168,7 @@ printf 'failure-b\n' >"$repo/writer-b/b"
 git -C "$repo" add .
 # Fail only the helper's inspection, while letting Git run the real commit.
 git() {
-    if [ "${1:-}" = diff ]; then return 7; fi
+    if [ "${1:-}" = diff-index ]; then return 7; fi
     command git "$@"
 }
 export -f git

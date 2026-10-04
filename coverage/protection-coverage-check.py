@@ -40,6 +40,15 @@ def check(manifest_path, corpus_path):
             handle = protection.get("handle") if isinstance(protection, dict) else None
             if not isinstance(handle, str) or not HANDLE.fullmatch(handle):
                 raise ValueError("manifest protection has an invalid handle")
+            anchors = protection.get("anchors")
+            if not isinstance(anchors, list):
+                raise ValueError(f"{handle}: anchors must be a list")
+            for number, anchor in enumerate(anchors, 1):
+                for field in ("file", "pattern", "provenance"):
+                    value = anchor.get(field) if isinstance(anchor, dict) else None
+                    if (not isinstance(value, str) or not value
+                            or (field == "provenance" and value not in PROVENANCE)):
+                        raise ValueError(f"{handle} anchor {number}: invalid {field}")
             handles.append(handle)
         corpus_handles = []
         for number, line in enumerate(corpus_path.read_text(encoding="utf-8-sig").splitlines(), 1):
